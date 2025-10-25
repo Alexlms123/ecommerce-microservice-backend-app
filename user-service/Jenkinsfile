@@ -1,0 +1,30 @@
+pipeline {
+    
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Clonando el repositorio desde la rama dev...'
+                git url: 'https://github.com/Alexlms123/ecommerce-microservice-backend-app.git', branch: 'dev'
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                
+                dir('user-service') {
+                    echo 'Construyendo y probando el user-service con Maven...'
+                    sh 'mvn clean package'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finalizado.'
+        
+            cleanWs()
+        }
+    }
