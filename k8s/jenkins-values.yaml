@@ -1,0 +1,33 @@
+controller:
+  image:
+    repository: "jenkins/jenkins"
+    tag: "lts-jdk17"
+
+  installPlugins:
+    - kubernetes:4151.v0f2933074992
+    - workflow-aggregator:596.v802b_b_4fd69b_3
+    - git:5.2.2
+    - configuration-as-code:1788.v5a_274de2691c
+    - blueocean:1.27.8
+    - docker-workflow:572.v950f58993843
+
+  persistence:
+    enabled: true
+    size: "8Gi"
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1.5"
+      memory: "3Gi"
+
+  service:
+    type: LoadBalancer
+    port: 8080
+
+agent:
+  image:
+    repository: "jenkins/inbound-agent"
+    tag: "latest"
