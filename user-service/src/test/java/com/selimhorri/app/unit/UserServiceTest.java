@@ -17,10 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-// Imports corregidos y completos para la arquitectura DTO
+import com.selimhorri.app.domain.Credential;
 import com.selimhorri.app.domain.User;
+import com.selimhorri.app.dto.CredentialDto;
 import com.selimhorri.app.dto.UserDto;
-import com.selimhorri.app.dto.response.collection.DtoCollectionResponse;
 import com.selimhorri.app.exception.wrapper.UserObjectNotFoundException;
 import com.selimhorri.app.repository.UserRepository;
 import com.selimhorri.app.service.impl.UserServiceImpl;
@@ -34,14 +34,19 @@ class UserServiceTest {
     @InjectMocks
     private UserServiceImpl userService;
 
-    // PRUEBA UNITARIA 1: Validar que al guardar un UserDTO, se retorna un DTO.
+    // PRUEBA UNITARIA 1: Validar que al guardar un UserDto, se retorna un Dto.
     @Test
     void givenUserDTO_whenSaveUser_thenReturnsUserDTO() {
         // Arrange
-        UserDto userDtoToSave = UserDto.builder().firstName("Alex").lastName("Lms").build();
+        UserDto userDtoToSave = UserDto.builder()
+                .firstName("Alex")
+                .lastName("Lms")
+                .credentialDto(CredentialDto.builder().build()) 
+                .build();
         User userEntity = new User();
         userEntity.setFirstName("Alex");
         userEntity.setLastName("Lms");
+        userEntity.setCredential(new Credential());
 
         when(this.userRepository.save(any(User.class))).thenReturn(userEntity);
 
@@ -54,12 +59,13 @@ class UserServiceTest {
         verify(this.userRepository, times(1)).save(any(User.class));
     }
 
-    // PRUEBA UNITARIA 2: Validar que se puede encontrar un usuario por su ID y devuelve un DTO.
+    // PRUEBA UNITARIA 2: Validar que se puede encontrar un usuario por su ID y devuelve un Dto.
     @Test
     void givenExistingUserId_whenFindById_thenReturnsUserDTO() {
         // Arrange
         User userEntity = new User();
         userEntity.setUserId(1);
+        userEntity.setCredential(new Credential());
         when(this.userRepository.findById(1)).thenReturn(Optional.of(userEntity));
 
         // Act
@@ -70,7 +76,7 @@ class UserServiceTest {
         assertEquals(1, foundUserDto.getUserId());
     }
 
-    // PRUEBA UNITARIA 3: Validar que se lanza UserNotFoundException si el usuario no existe.
+    // PRUEBA UNITARIA 3: Validar que se lanza UserObjectNotFoundException si el usuario no existe.
     @Test
     void givenNonExistingUserId_whenFindById_thenThrowsUserNotFoundException() {
         // Arrange
@@ -82,14 +88,19 @@ class UserServiceTest {
         });
     }
 
-    // PRUEBA UNITARIA 4: Validar que el método de actualizar funciona con DTOs.
+    // PRUEBA UNITARIA 4: Validar que el método de actualizar funciona con Dtos.
     @Test
     void givenUserDTO_whenUpdateUser_thenRepositorySaveIsCalled() {
         // Arrange
-        UserDto userDtoToUpdate = UserDto.builder().userId(1).firstName("AlexUpdated").build();
+        UserDto userDtoToUpdate = UserDto.builder()
+                .userId(1)
+                .firstName("AlexUpdated")
+                .credentialDto(CredentialDto.builder().build())
+                .build();
         User userEntity = new User();
         userEntity.setUserId(1);
         userEntity.setFirstName("AlexUpdated");
+        userEntity.setCredential(new Credential());
 
         when(this.userRepository.save(any(User.class))).thenReturn(userEntity);
 
