@@ -5,18 +5,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.selimhorri.app.dto.UserDto;
 import com.selimhorri.app.dto.CredentialDto;
-import com.selimhorri.app.service.UserService;
+import com.selimhorri.app.dto.UserDto;
+import com.selimhorri.app.repository.CredentialRepository;
 import com.selimhorri.app.repository.UserRepository;
+import com.selimhorri.app.service.UserService;
 
 @SpringBootTest
-@ActiveProfiles("test") // Activa un perfil de prueba (si tuvieras un application-test.properties)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD) // Reinicia la BD antes de cada test
 class UserIntegrationTest {
 
     @Autowired
@@ -24,6 +28,9 @@ class UserIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CredentialRepository credentialRepository;
 
     // PRUEBA DE INTEGRACIÓN 1: Guardar un usuario y verificar que se persiste en la BD.
     @Test
@@ -43,13 +50,18 @@ class UserIntegrationTest {
         // Assert
         assertNotNull(savedUser.getUserId(), "El ID del usuario no debería ser nulo después de guardar");
         assertTrue(this.userRepository.findById(savedUser.getUserId()).isPresent(), "El usuario debería existir en la BD");
+        assertNotNull(savedUser.getCredentialDto().getCredentialId(), "El ID de la credencial no debería ser nulo");
     }
 
     // PRUEBA DE INTEGRACIÓN 2: Encontrar un usuario que ya ha sido guardado.
     @Test
     void givenUserId_whenFindById_thenReturnsCorrectUser() {
         // Arrange
-        UserDto savedUser = this.userService.save(UserDto.builder().firstName("FindMe").credentialDto(CredentialDto.builder().username("find-me").build()).build());
+        UserDto userToSave = UserDto.builder()
+                .firstName("FindMe")
+                .credentialDto(CredentialDto.builder().username("find-me").build())
+                .build();
+        UserDto savedUser = this.userService.save(userToSave);
 
         // Act
         UserDto foundUser = this.userService.findById(savedUser.getUserId());
@@ -63,12 +75,14 @@ class UserIntegrationTest {
     @Test
     void givenUpdatedDto_whenUpdate_thenDataIsUpdatedInDb() {
         // Arrange
-        UserDto savedUser = this.userService.save(UserDto.builder().firstName("Original").credentialDto(CredentialDto.builder().username("original").build()).build());
-        UserDto toUpdate = UserDto.builder()
-                .userId(savedUser.getUserId())
-                .firstName("UpdatedName")
-                .credentialDto(savedUser.getCredentialDto())
+        UserDto userToSave = UserDto.builder()
+                .firstName("Original")
+                .credentialDto(CredentialDto.builder().username("original").build())
                 .build();
+        UserDto savedUser = this.userService.save(userToSave);
+
+        UserDto toUpdate = this.userService.findById(savedUser.getUserId());
+        toUpdate.setFirstName("UpdatedName");
 
         // Act
         this.userService.update(toUpdate);
@@ -82,7 +96,11 @@ class UserIntegrationTest {
     @Test
     void givenUserId_whenDelete_thenUserIsRemovedFromDb() {
         // Arrange
-        UserDto savedUser = this.userService.save(UserDto.builder().firstName("ToDelete").credentialDto(CredentialDto.builder().username("to-delete").build()).build());
+        UserDto userToSave = UserDto.builder()
+                .firstName("ToDelete")
+                .credentialDto(CredentialDto.builder().username("to-delete").build())
+                .build();
+        UserDto savedUser = this.userService.save(userToSave);
         assertTrue(this.userRepository.findById(savedUser.getUserId()).isPresent(), "El usuario debe existir antes de borrarlo");
 
         // Act
@@ -96,14 +114,12 @@ class UserIntegrationTest {
     @Test
     void whenFindAll_thenReturnsAllUsers() {
         // Arrange
-        long countBefore = this.userRepository.count();
         this.userService.save(UserDto.builder().firstName("UserA").credentialDto(CredentialDto.builder().username("user-a").build()).build());
         this.userService.save(UserDto.builder().firstName("UserB").credentialDto(CredentialDto.builder().username("user-b").build()).build());
 
         // Act
         long countAfter = this.userService.findAll().size();
-
-        // Assert
-        assertEquals(countBefore + 2, countAfter);
+        
+        assertEquals(2, countAfter);
     }
 }
