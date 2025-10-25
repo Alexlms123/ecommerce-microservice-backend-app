@@ -41,7 +41,7 @@ class UserServiceTest {
         UserDto userDtoToSave = UserDto.builder()
                 .firstName("Alex")
                 .lastName("Lms")
-                .credentialDto(CredentialDto.builder().build()) 
+                .credentialDto(CredentialDto.builder().build())
                 .build();
         User userEntity = new User();
         userEntity.setFirstName("Alex");
