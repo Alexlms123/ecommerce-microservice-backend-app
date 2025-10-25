@@ -27,11 +27,12 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('user-service') {
-                    echo "Construyendo la imagen de Docker para el user-service..."
-                
-                    def imageName = "alexlms123/user-service:latest"
-                    
-                    sh "docker build -t ${imageName} ."
+                    script {
+                        echo "Construyendo la imagen de Docker para el user-service..."
+                        def imageName = "alexlms123/user-service:latest"
+                        
+                        sh "docker build -t ${imageName} ."
+                    }
                 }
             }
         }
