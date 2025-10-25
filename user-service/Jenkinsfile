@@ -36,6 +36,27 @@ pipeline {
                 }
             }
         }
+
+        stage('Push Docker Image') {
+            steps {
+                dir('user-service') {
+                    script {
+                        echo "Subiendo la imagen a Docker Hub..."
+                        def imageName = "alexlms123/user-service:latest"
+
+                        // Usa las credenciales guardadas en Jenkins para hacer login en Docker Hub.
+                        // El ID 'dockerhub-credentials' debe coincidir con el que creaste.
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            // Hacemos login de forma segura, pasando la contraseña por la entrada estándar.
+                            sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                            
+                            // Subimos la imagen.
+                            sh "docker push ${imageName}"
+                        }
+                    }
+                }
+            }
+        }
     }
 
     post {
