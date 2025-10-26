@@ -1,5 +1,4 @@
 pipeline {
-    
     agent any
 
     tools {
@@ -16,9 +15,8 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                
-                dir('user-service') {
-                    echo 'Construyendo y probando el user-service con Maven...'
+                dir('order-service') {
+                    echo 'Construyendo y probando el order-service con Maven...'
                     sh 'mvn clean package'
                 }
             }
@@ -26,11 +24,10 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                dir('user-service') {
+                dir('order-service') {
                     script {
-                        echo "Construyendo la imagen de Docker para el user-service..."
-                        def imageName = "alexlms123/user-service:latest"
-                        
+                        echo "Construyendo la imagen de Docker para el order-service..."
+                        def imageName = "alexlms123/order-service:latest"
                         sh "docker build -t ${imageName} ."
                     }
                 }
@@ -39,17 +36,12 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                dir('user-service') {
+                dir('order-service') {
                     script {
                         echo "Subiendo la imagen a Docker Hub..."
-                        def imageName = "alexlms123/user-service:latest"
-
-                        // Usa las credenciales guardadas en Jenkins para hacer login en Docker Hub.
+                        def imageName = "alexlms123/order-service:latest"
                         withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                            // Hacemos login de forma segura, pasando la contraseña por la entrada estándar.
                             sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
-                            
-                            // Subimos la imagen.
                             sh "docker push ${imageName}"
                         }
                     }
@@ -61,7 +53,6 @@ pipeline {
     post {
         always {
             echo 'Pipeline finalizado.'
-        
             cleanWs()
         }
     }
