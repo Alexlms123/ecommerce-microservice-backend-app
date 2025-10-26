@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-discovery
+  namespace: ecommerce-stage
+spec:
+  selector:
+    matchLabels:
+      app: service-discovery
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: service-discovery
+    spec:
+      containers:
+        - name: service-discovery
+          image: alexlms123/service-discovery:latest
+          ports:
+            - containerPort: 8761
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-discovery
+  namespace: ecommerce-stage
+spec:
+  type: ClusterIP
+  selector:
+    app: service-discovery
+  ports:
+    - port: 8761
+      targetPort: 8761

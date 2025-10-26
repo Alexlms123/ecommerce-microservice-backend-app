@@ -45,7 +45,7 @@ class FavouriteServiceImplTest {
         MockitoAnnotations.openMocks(this);
 
         LocalDateTime likeDate = LocalDateTime.now();
-        
+
         favourite = Favourite.builder()
                 .userId(1)
                 .productId(10)
