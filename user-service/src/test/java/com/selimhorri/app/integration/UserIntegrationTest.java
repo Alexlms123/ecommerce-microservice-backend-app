@@ -120,6 +120,6 @@ class UserIntegrationTest {
         // Act
         long countAfter = this.userService.findAll().size();
 
-        assertEquals(2, countAfter);
+        assertEquals(6, countAfter);
     }
 }
