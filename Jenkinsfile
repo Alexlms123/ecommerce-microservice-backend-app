@@ -31,12 +31,11 @@ pipeline {
                     echo 'Compilando todos los servicios con Maven...'
                     env.SERVICES.split().each { service ->
                         dir("${service}") {
-                            echo " Compilando ${service}..."
+                            echo "Compilando ${service}..."
                             try {
                                 sh 'mvn clean package -DskipTests'
                             } catch (Exception e) {
-                                echo "   Error compilando ${service}: ${e.message}"
-
+                                echo "Error compilando ${service}: ${e.message}"
                             }
                         }
                     }
@@ -47,14 +46,13 @@ pipeline {
         stage('Build & Push Docker Images') {
             steps {
                 script {
-                    echo 'Compilando y empujando imágenes Docker...'
+                    echo 'Compilando y empujando imagenes Docker...'
 
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         env.SERVICES.split().each { service ->
-                            echo "   ▶ Construyendo imagen para ${service}..."
+                            echo "Construyendo imagen para ${service}..."
 
                             try {
-                                // Build desde la carpeta del servicio (contexto relativo al Dockerfile)
                                 dir("${service}") {
                                     sh """
                                         docker build \
@@ -64,14 +62,14 @@ pipeline {
                                     """
                                 }
 
-                                echo "  Empujando imagen ${service}..."
+                                echo "Empujando imagen ${service}..."
                                 sh """
                                     echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
                                     docker push ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP}
                                     docker push ${env.DOCKER_REGISTRY}/${service}:latest
                                 """
                             } catch (Exception e) {
-                                echo "  Error con ${service}: ${e.message}"
+                                echo "Error con ${service}: ${e.message}"
                             }
                         }
                     }
@@ -84,14 +82,14 @@ pipeline {
                 branch 'dev'
             }
             steps {
-                echo 'Ejecutando pruebas unitarias y de integración...'
                 script {
+                    echo 'Ejecutando pruebas unitarias y de integracion...'
                     env.SERVICES.split().each { service ->
                         dir("${service}") {
                             try {
                                 sh 'mvn clean test'
                             } catch (Exception e) {
-                                echo "   Tests fallaron en ${service}: ${e.message}"
+                                echo "Tests fallaron en ${service}: ${e.message}"
                             }
                         }
                     }
@@ -104,18 +102,20 @@ pipeline {
                 branch 'dev'
             }
             steps {
-                echo 'Levantando ambiente E2E con Docker Compose...'
-                try {
-                    sh '''
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} up -d || true
-                        sleep 30
-                        echo "🧪 Ejecutando tests E2E..."
-                        echo "Tests E2E completados"
-                    '''
-                } catch (Exception e) {
-                    echo "   E2E Tests fallaron: ${e.message}"
-                } finally {
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down || true'
+                script {
+                    echo 'Levantando ambiente E2E con Docker Compose...'
+                    try {
+                        sh '''
+                            docker-compose -f ${DOCKER_COMPOSE_FILE} up -d || true
+                            sleep 30
+                            echo "Ejecutando tests E2E..."
+                            echo "Tests E2E completados"
+                        '''
+                    } catch (Exception e) {
+                        echo "E2E Tests fallaron: ${e.message}"
+                    } finally {
+                        sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down 2>/dev/null || true'
+                    }
                 }
             }
         }
@@ -125,9 +125,9 @@ pipeline {
                 branch 'stage'
             }
             steps {
-                echo 'Desplegando en Kubernetes STAGE...'
-                withCredentials([file(credentialsId: 'kubeconfig-stage', variable: 'KUBECONFIG')]) {
-                    script {
+                script {
+                    echo 'Desplegando en Kubernetes STAGE...'
+                    withCredentials([file(credentialsId: 'kubeconfig-stage', variable: 'KUBECONFIG')]) {
                         try {
                             sh '''
                                 export KUBECONFIG=$KUBECONFIG
@@ -137,16 +137,16 @@ pipeline {
                                 echo "Desplegando servicios en STAGE..."
                                 for service in ${SERVICES}; do
                                     if [ -d "k8s/$service" ]; then
-                                        echo "  ▶ Desplegando $service..."
+                                        echo "Desplegando $service..."
                                         kubectl apply -f k8s/$service/ -n ${K8S_NAMESPACE_STAGE} || true
                                         kubectl rollout status deployment/$service -n ${K8S_NAMESPACE_STAGE} --timeout=5m || true
                                     fi
                                 done
 
-                                echo "✅ Deploy en STAGE completado"
+                                echo "Deploy en STAGE completado"
                             '''
                         } catch (Exception e) {
-                            echo " Error en deploy STAGE: ${e.message}"
+                            echo "Error en deploy STAGE: ${e.message}"
                         }
                     }
                 }
@@ -158,9 +158,9 @@ pipeline {
                 branch 'master'
             }
             steps {
-                echo 'Desplegando en Kubernetes MASTER...'
-                withCredentials([file(credentialsId: 'kubeconfig-master', variable: 'KUBECONFIG')]) {
-                    script {
+                script {
+                    echo 'Desplegando en Kubernetes MASTER...'
+                    withCredentials([file(credentialsId: 'kubeconfig-master', variable: 'KUBECONFIG')]) {
                         try {
                             sh '''
                                 export KUBECONFIG=$KUBECONFIG
@@ -170,7 +170,7 @@ pipeline {
                                 echo "Desplegando servicios en MASTER..."
                                 for service in ${SERVICES}; do
                                     if [ -d "k8s/$service" ]; then
-                                        echo "  ▶ Desplegando $service..."
+                                        echo "Desplegando $service..."
                                         kubectl apply -f k8s/$service/ -n ${K8S_NAMESPACE_MASTER} || true
                                         kubectl rollout status deployment/$service -n ${K8S_NAMESPACE_MASTER} --timeout=5m || true
                                     fi
@@ -185,7 +185,7 @@ pipeline {
                                 echo "Deploy en MASTER completado"
                             '''
                         } catch (Exception e) {
-                            echo "   Error en deploy MASTER: ${e.message}"
+                            echo "Error en deploy MASTER: ${e.message}"
                         }
                     }
                 }
@@ -203,7 +203,7 @@ pipeline {
             echo 'Pipeline ejecutado exitosamente'
         }
         failure {
-            echo 'Pipeline falló - revisar logs arriba'
+            echo 'Pipeline fallo - revisar logs arriba'
         }
     }
 }
