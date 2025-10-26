@@ -33,7 +33,7 @@ pipeline {
                         dir("${service}") {
                             echo "Compilando ${service}..."
                             try {
-                                sh 'mvn clean package -DskipTests -Dmaven.compiler.source=11 -Dmaven.compiler.target=11'
+                                sh 'mvn clean package -DskipTests -U -Xmx1024m -XX:+IgnoreUnrecognizedVMOptions -XX:+UseG1GC'
                             } catch (Exception e) {
                                 echo "Error compilando ${service}: ${e.message}"
                             }
@@ -87,7 +87,7 @@ pipeline {
                     env.SERVICES.split().each { service ->
                         dir("${service}") {
                             try {
-                                sh 'mvn clean test -Dmaven.compiler.source=11 -Dmaven.compiler.target=11'
+                                sh 'mvn clean test -U -Xmx1024m -XX:+IgnoreUnrecognizedVMOptions -XX:+UseG1GC'
                             } catch (Exception e) {
                                 echo "Tests fallaron en ${service}: ${e.message}"
                             }
