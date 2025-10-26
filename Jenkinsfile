@@ -31,26 +31,27 @@ pipeline {
                 script {
                     def BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
 
-                    env.SERVICES.split().each { service ->
-                        echo "Building Docker image for ${service}..."
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        env.SERVICES.split().each { service ->
+                            echo "Building Docker image for ${service}..."
+                            sh """
+                                docker build \
+                                    -t ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP} \
+                                    -f ${service}/Dockerfile \
+                                    .
+                            """
 
-                        // Ejecuta docker build desde la RAÍZ del proyecto
-                        sh """
-                            docker build \
-                                -t ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP} \
-                                -f ${service}/Dockerfile \
-                                .
-                        """
-
-                        echo "Pushing image for ${service}..."
-                        sh """
-                            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                            docker push ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP}
-                        """
+                            echo "Pushing image for ${service}..."
+                            sh """
+                                echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                                docker push ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP}
+                            """
+                        }
                     }
                 }
             }
         }
+
 
         // PUNTO 3: DEV
         stage('Unit & Integration Tests') {
