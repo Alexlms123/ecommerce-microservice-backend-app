@@ -29,20 +29,24 @@ pipeline {
         stage('Build & Push Docker Images') {
             steps {
                 script {
-                    for (svc in env.SERVICES.tokenize()) {
-                        dir(svc) {
-                            sh 'mvn clean package -DskipTests'
-                            def imageName = "${env.DOCKER_REGISTRY}/${svc}:${env.BUILD_TIMESTAMP}"
-                            sh "docker build -t ${imageName} ."
-                            withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
-                                sh "docker push ${imageName}"
-                                // Opciónally: tag 'latest' también para facilidad
-                                sh "docker tag ${imageName} ${env.DOCKER_REGISTRY}/${svc}:latest"
-                                sh "docker push ${env.DOCKER_REGISTRY}/${svc}:latest"
-                                sh "docker logout"
-                            }
-                        }
+                    def BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
+
+                    env.SERVICES.split().each { service ->
+                        echo "Building Docker image for ${service}..."
+
+                        // Ejecuta docker build desde la RAÍZ del proyecto
+                        sh """
+                            docker build \
+                                -t ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP} \
+                                -f ${service}/Dockerfile \
+                                .
+                        """
+
+                        echo "Pushing image for ${service}..."
+                        sh """
+                            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                            docker push ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP}
+                        """
                     }
                 }
             }
