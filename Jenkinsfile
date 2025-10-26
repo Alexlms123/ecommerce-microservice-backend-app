@@ -34,7 +34,6 @@ pipeline {
                             echo "Compilando ${service}..."
                             try {
                                 sh '''
-                                    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
                                     mvn clean package -DskipTests \
                                         -Dmaven.compiler.source=11 \
                                         -Dmaven.compiler.target=11 \
