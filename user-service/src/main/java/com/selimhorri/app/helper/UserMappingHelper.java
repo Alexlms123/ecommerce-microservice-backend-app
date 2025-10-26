@@ -30,7 +30,8 @@ public interface UserMappingHelper {
 	}
 	
 	public static User map(final UserDto userDto) {
-		return User.builder()
+
+		final User user = User.builder()
 				.userId(userDto.getUserId())
 				.firstName(userDto.getFirstName())
 				.lastName(userDto.getLastName())
@@ -49,6 +50,9 @@ public interface UserMappingHelper {
 							.isCredentialsNonExpired(userDto.getCredentialDto().getIsCredentialsNonExpired())
 							.build())
 				.build();
+
+		user.getCredential().setUser(user);
+		return user;
 	}
 	
 	
