@@ -8,7 +8,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = "alexlms123"
         // Incluye todos los core y microservicios
-        SERVICES = "service-discovery cloud-config api-gateway proxy-client product-service order-service payment-service shipping-service favourite-service user-service"
+        SERVICES = "service-discovery cloud-config api-gateway product-service order-service payment-service shipping-service favourite-service user-service proxy-client"
         K8S_NAMESPACE_DEV = "ecommerce-dev"
         K8S_NAMESPACE_STAGE = "ecommerce-stage"
         K8S_NAMESPACE_MASTER = "ecommerce-master"
@@ -26,17 +26,36 @@ pipeline {
             }
         }
 
+        stage('Build All Services') {
+            steps {
+                script {
+                    def SERVICES = 'service-discovery cloud-config api-gateway product-service order-service payment-service shipping-service favourite-service user-service proxy-client'
+
+                    SERVICES.split().each { service ->
+                        dir("${service}") {
+                            echo "Building ${service}..."
+                            sh """
+                                mvn clean package -DskipTests
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+
         stage('Build & Push Docker Images') {
             steps {
                 script {
                     def BUILD_TIMESTAMP = sh(script: 'date +%Y%m%d_%H%M%S', returnStdout: true).trim()
+                    def SERVICES = 'service-discovery cloud-config api-gateway product-service order-service payment-service shipping-service favourite-service user-service proxy-client'
 
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        env.SERVICES.split().each { service ->
+                        SERVICES.split().each { service ->
                             echo "Building Docker image for ${service}..."
                             sh """
                                 docker build \
-                                    -t ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP} \
+                                    -t ${DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP} \
                                     -f ${service}/Dockerfile \
                                     .
                             """
@@ -44,7 +63,7 @@ pipeline {
                             echo "Pushing image for ${service}..."
                             sh """
                                 echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
-                                docker push ${env.DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP}
+                                docker push ${DOCKER_REGISTRY}/${service}:${BUILD_TIMESTAMP}
                             """
                         }
                     }
