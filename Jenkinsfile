@@ -37,7 +37,6 @@ pipeline {
                                     mvn clean package -DskipTests \
                                         -Dmaven.compiler.source=11 \
                                         -Dmaven.compiler.target=11 \
-                                        -Dmaven.compiler.release=11 \
                                         -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
                                 '''
                             } catch (Exception e) {
