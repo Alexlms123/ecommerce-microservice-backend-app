@@ -33,7 +33,14 @@ pipeline {
                         dir("${service}") {
                             echo "Compilando ${service}..."
                             try {
-                                sh 'mvn clean package -DskipTests'
+                                sh '''
+                                    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+                                    mvn clean package -DskipTests \
+                                        -Dmaven.compiler.source=11 \
+                                        -Dmaven.compiler.target=11 \
+                                        -Dmaven.compiler.release=11 \
+                                        -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+                                '''
                             } catch (Exception e) {
                                 echo "Error compilando ${service}: ${e.message}"
                             }
@@ -87,7 +94,13 @@ pipeline {
                     env.SERVICES.split().each { service ->
                         dir("${service}") {
                             try {
-                                sh 'mvn clean test'
+                                sh '''
+                                    export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+                                    mvn clean test \
+                                        -Dmaven.compiler.source=11 \
+                                        -Dmaven.compiler.target=11 \
+                                        -Dmaven.compiler.release=11
+                                '''
                             } catch (Exception e) {
                                 echo "Tests fallaron en ${service}: ${e.message}"
                             }
@@ -207,3 +220,4 @@ pipeline {
         }
     }
 }
+
